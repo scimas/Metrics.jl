@@ -16,30 +16,32 @@ end
 
 """
     accuracy(y, ŷ, classes=unique([y; ŷ]))
+    accuracy(conf_mat)
 
-Calculates accuracy score for targets y and predictions ŷ. classes are the
-unique target values. It is mathematically equiavalent to #(true positives) ÷
-#(observations).
+Calculates accuracy score for targets y and predictions ŷ or the confusion
+matrix conf_mat. classes are the unique target values. It is mathematically
+equiavalent to
+
+accuracy = TP / N
+
+where TP and N are true positives and total number of observations respectively.
 """
 function accuracy(y::AbstractVector, ŷ::AbstractVector, classes::AbstractVector=unique([y; ŷ]))
     conf_mat = confusion_matrix(y, ŷ, classes)
     accuracy(conf_mat)
 end
 
-"""
-    accuracy(conf_mat)
-
-Calculates accuracy score using the confusion matrix conf_mat.
-"""
 function accuracy(conf_mat::Matrix{<:Integer})
     tr(conf_mat) / sum(sum(conf_mat; dims=1))
 end
 
 """
     cohen_kappa(y, ŷ, classes=unique([y; ŷ]))
+    cohen_kappa(conf_mat)
 
-Calculates Cohen's Kappa statistic for y and ŷ. classes are the unique target
-values. It is mathematically equiavalent to
+Calculates Cohen's Kappa statistic for y and ŷ or using the confusion matrix
+conf_mat. classes are the unique target values. It is mathematically equiavalent
+to
 
 κ = (pₒ - pₑ)/(1 - pₑ)
 
@@ -51,11 +53,6 @@ function cohen_kappa(y::AbstractVector, ŷ::AbstractVector, classes::AbstractVe
     cohen_kappa(conf_mat)
 end
 
-"""
-    cohen_kappa(conf_mat)
-
-Calculates Cohen's Kappa statistic using the confusion matrix conf_mat.
-"""
 function cohen_kappa(conf_mat::Matrix{<:Integer})
     pₑ = only(sum(conf_mat; dims=1) * sum(conf_mat; dims=2) / sum(sum(conf_mat; dims=1))^2)
     (accuracy(conf_mat) - pₑ) / (1 - pₑ)
@@ -63,9 +60,11 @@ end
 
 """
     f_beta(y, ŷ, classes=unique([y; ŷ]); β=1)
+    f_beta(conf_mat; β=1)
 
-Calculates Fᵦ score for the targets y, predictions ŷ and β value. classes are
-the unique target values. It is mathematically equiavalent to
+Calculates Fᵦ score for the targets y, predictions ŷ or using the confusion
+matrix conf_mat and β value. classes are the unique target values. It is
+mathematically equiavalent to
 
 Fᵦ = (1 + (β ^ 2 * FN + FP) / ((1 + β ^ 2) * TP)) ^ -1
 
@@ -79,11 +78,6 @@ function f_beta(y::AbstractVector, ŷ::AbstractVector, classes::AbstractVector=
     f_beta(conf_mat; β=β)
 end
 
-"""
-    f_beta(conf_mat; β=1)
-
-Calculates Fᵦ score using the confusion matrix conf_mat for the given β value.
-"""
 function f_beta(conf_mat::Matrix{<:Integer}; β=1)
     β >= 0 || throw(DomainError(β, "β must be non-negative for Fᵦ score"))
     tp = tr(conf_mat)
@@ -91,3 +85,12 @@ function f_beta(conf_mat::Matrix{<:Integer}; β=1)
     fn = sum(permutedims(sum(conf_mat; dims=1)) - diag(conf_mat))
     inv(1 + (β ^ 2 * fn + fp) / ((1 + β ^ 2) * tp))
 end
+
+"""
+    f1_score(y, ŷ, classes=unique([y; ŷ]))
+    f1_score(conf_mat; β=1)
+
+Calculates Fᵦ score with β=1.
+"""
+f1_score(y::AbstractVector, ŷ::AbstractVector, classes::AbstractVector=unique([y; ŷ])) = f_beta(y, ŷ, classes)
+f1_score(conf_mat::Matrix{<:Integer}) = f_beta(conf_mat)
