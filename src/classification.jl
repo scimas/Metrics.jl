@@ -26,3 +26,7 @@ function accuracy(y::AbstractVector, ŷ::AbstractVector, classes::AbstractVecto
     conf_mat = confusion_matrix(y, ŷ, classes)
     sum(conf_mat[1:length(classes) + 1:length(classes) * length(classes)]) / length(y)
 end
+
+function accuracy(conf_mat::Matrix)
+    sum(conf_mat[1:size(conf_mat, 1) + 1:size(conf_mat, 1) * size(conf_mat, 1)]) / sum(sum(conf_mat; dims=1))
+end
