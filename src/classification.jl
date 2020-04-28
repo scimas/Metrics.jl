@@ -24,7 +24,7 @@ mathematically equiavalent to #(true positives) ÷ #(observations).
 """
 function accuracy(y::AbstractVector, ŷ::AbstractVector, classes::AbstractVector=unique([y; ŷ]))
     conf_mat = confusion_matrix(y, ŷ, classes)
-    sum(conf_mat[1:length(classes) + 1:length(classes) * length(classes)]) / length(y)
+    accuracy(conf_mat)
 end
 
 """
