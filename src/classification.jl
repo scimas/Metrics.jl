@@ -32,10 +32,10 @@ end
 Calculates accuracy score using the confusion matrix conf_mat.
 """
 function accuracy(conf_mat::Matrix{<:Integer})
-    sum(conf_mat[1:size(conf_mat, 1) + 1:size(conf_mat, 1) * size(conf_mat, 1)]) / sum(sum(conf_mat; dims=1))
+    tr(conf_mat) / sum(sum(conf_mat; dims=1))
 end
 
-@doc raw"""
+"""
     cohen_kappa(y, ŷ, classes=unique([y; ŷ]))
 
 Calculates Cohen's Kappa statistic for y and ŷ. classes are the unique target
@@ -58,5 +58,36 @@ Calculates Cohen's Kappa statistic using the confusion matrix conf_mat.
 """
 function cohen_kappa(conf_mat::Matrix{<:Integer})
     pₑ = only(sum(conf_mat; dims=1) * sum(conf_mat; dims=2) / sum(sum(conf_mat; dims=1))^2)
-    (accuracy(conf_mat) - pₑ) / (1.0 - pₑ)
+    (accuracy(conf_mat) - pₑ) / (1 - pₑ)
+end
+
+"""
+    f_beta(y, ŷ, classes=unique([y; ŷ]); β=1)
+
+Calculates Fᵦ score for the targets y, predictions ŷ and β value. classes are
+the unique target values. It is mathematically equiavalent to
+
+Fᵦ = (1 + (β ^ 2 * FN + FP) / ((1 + β ^ 2) * TP)) ^ -1
+
+where TP, FP and FN are true positives, false positives and false negatives
+respectively. Currently only supports global score calculation, per class
+averaging is not available.
+"""
+function f_beta(y::AbstractVector, ŷ::AbstractVector, classes::AbstractVector=unique([y; ŷ]); β=1)
+    β >= 0 || throw(DomainError(β, "β must be non-negative for Fᵦ score"))
+    conf_mat = confusion_matrix(y, ŷ, classes)
+    f_beta(conf_mat; β=β)
+end
+
+"""
+    f_beta(conf_mat; β=1)
+
+Calculates Fᵦ score using the confusion matrix conf_mat for the given β value.
+"""
+function f_beta(conf_mat::Matrix{<:Integer}; β=1)
+    β >= 0 || throw(DomainError(β, "β must be non-negative for Fᵦ score"))
+    tp = tr(conf_mat)
+    fp = sum(sum(conf_mat; dims=2) - diag(conf_mat))
+    fn = sum(permutedims(sum(conf_mat; dims=1)) - diag(conf_mat))
+    inv(1 + (β ^ 2 * fn + fp) / ((1 + β ^ 2) * tp))
 end

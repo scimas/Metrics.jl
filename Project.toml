@@ -2,3 +2,6 @@ name = "Metrics"
 uuid = "819086d7-c981-4f51-835b-9494c1a6708c"
 authors = ["Mihir Gadgil <16473290+scimas@users.noreply.github.com>"]
 version = "0.1.0"
+
+[deps]
+LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"

@@ -1,4 +1,5 @@
 module Metrics
+using LinearAlgebra: tr, diag
 
 export
     confusion_matrix,
