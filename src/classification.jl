@@ -17,10 +17,9 @@ end
 """
     accuracy(y, ŷ, classes=unique([y; ŷ]))
 
-Calculates accuracy score for targets y and predictions ŷ. classes are the unique
-target values. It is recommended to specify this explicitly to avoid ambiguities
-about the order of the target labels in the confusion matrix. It is
-mathematically equiavalent to #(true positives) ÷ #(observations).
+Calculates accuracy score for targets y and predictions ŷ. classes are the
+unique target values. It is mathematically equiavalent to #(true positives) ÷
+#(observations).
 """
 function accuracy(y::AbstractVector, ŷ::AbstractVector, classes::AbstractVector=unique([y; ŷ]))
     conf_mat = confusion_matrix(y, ŷ, classes)
@@ -32,6 +31,32 @@ end
 
 Calculates accuracy score using the confusion matrix conf_mat.
 """
-function accuracy(conf_mat::Matrix)
+function accuracy(conf_mat::Matrix{<:Integer})
     sum(conf_mat[1:size(conf_mat, 1) + 1:size(conf_mat, 1) * size(conf_mat, 1)]) / sum(sum(conf_mat; dims=1))
+end
+
+@doc raw"""
+    cohen_kappa(y, ŷ, classes=unique([y; ŷ]))
+
+Calculates Cohen's Kappa statistic for y and ŷ. classes are the unique target
+values. It is mathematically equiavalent to
+
+κ = (pₒ - pₑ)/(1 - pₑ)
+
+where pₒ and pₑ are the observed and expected probabilities of agreement,
+respectively.
+"""
+function cohen_kappa(y::AbstractVector, ŷ::AbstractVector, classes::AbstractVector=unique([y; ŷ]))
+    conf_mat = confusion_matrix(y, ŷ, classes)
+    cohen_kappa(conf_mat)
+end
+
+"""
+    cohen_kappa(conf_mat)
+
+Calculates Cohen's Kappa statistic using the confusion matrix conf_mat.
+"""
+function cohen_kappa(conf_mat::Matrix{<:Integer})
+    pₑ = only(sum(conf_mat; dims=1) * sum(conf_mat; dims=2) / sum(sum(conf_mat; dims=1))^2)
+    (accuracy(conf_mat) - pₑ) / (1.0 - pₑ)
 end
