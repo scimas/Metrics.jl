@@ -1,6 +1,8 @@
 module Metrics
 
-export confusion_matrix
+export
+    confusion_matrix,
+    accuracy
 
 include("classification.jl")
 
