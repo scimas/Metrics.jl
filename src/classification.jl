@@ -81,8 +81,8 @@ end
 function f_beta(conf_mat::Matrix{<:Integer}; β=1)
     β >= 0 || throw(DomainError(β, "β must be non-negative for Fᵦ score"))
     tp = tr(conf_mat)
-    fp = sum(sum(conf_mat; dims=1) - diag(conf_mat))
-    fn = sum(permutedims(sum(conf_mat; dims=2)) - diag(conf_mat))
+    fp = sum(permutedims(sum(conf_mat; dims=1)) - diag(conf_mat))
+    fn = sum(sum(conf_mat; dims=2) - diag(conf_mat))
     inv(1 + (β ^ 2 * fn + fp) / ((1 + β ^ 2) * tp))
 end
 
