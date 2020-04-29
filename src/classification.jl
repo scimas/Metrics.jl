@@ -9,7 +9,7 @@ function confusion_matrix(y::AbstractVector, ŷ::AbstractVector, classes::Abstr
     length(y) == length(ŷ) || throw(DimensionMismatch("targets and predictions should have same number of elements"))
     mat = zeros(Int, length(classes), length(classes))
     @inbounds for (i, j) in Iterators.product(1:length(classes), 1:length(classes))
-        mat[i, j] = sum(ŷ[y .== classes[j]] .== classes[i])
+        mat[i, j] = sum(ŷ[y .== classes[i]] .== classes[j])
     end
     mat
 end
@@ -35,7 +35,7 @@ function accuracy(conf_mat::Matrix{<:Integer})
     tr(conf_mat) / sum(sum(conf_mat; dims=1))
 end
 
-"""
+@doc raw"""
     cohen_kappa(y, ŷ, classes=unique([y; ŷ]))
     cohen_kappa(conf_mat)
 
@@ -43,7 +43,7 @@ Calculates Cohen's Kappa statistic for y and ŷ or using the confusion matrix
 conf_mat. classes are the unique target values. It is mathematically equiavalent
 to
 
-κ = (pₒ - pₑ)/(1 - pₑ)
+``κ = \frac{pₒ - pₑ}{1 - pₑ}``
 
 where pₒ and pₑ are the observed and expected probabilities of agreement,
 respectively.
@@ -81,8 +81,8 @@ end
 function f_beta(conf_mat::Matrix{<:Integer}; β=1)
     β >= 0 || throw(DomainError(β, "β must be non-negative for Fᵦ score"))
     tp = tr(conf_mat)
-    fp = sum(sum(conf_mat; dims=2) - diag(conf_mat))
-    fn = sum(permutedims(sum(conf_mat; dims=1)) - diag(conf_mat))
+    fp = sum(sum(conf_mat; dims=1) - diag(conf_mat))
+    fn = sum(permutedims(sum(conf_mat; dims=2)) - diag(conf_mat))
     inv(1 + (β ^ 2 * fn + fp) / ((1 + β ^ 2) * tp))
 end
 
