@@ -81,8 +81,8 @@ function cohen_kappa(conf_mat::Matrix{<:Integer})
 end
 
 """
-    f_beta(y, ŷ, classes=unique([y; ŷ]); β=1)
-    f_beta(conf_mat; β=1)
+    f_beta(y, ŷ, classes=unique([y; ŷ]); β, mode=:binary)
+    f_beta(conf_mat; β, mode=:binary)
 
 Calculates Fᵦ score for the targets y, predictions ŷ or using the confusion
 matrix conf_mat and β value. classes are the unique target values. It is
@@ -93,26 +93,76 @@ Fᵦ = (1 + (β ^ 2 * FN + FP) / ((1 + β ^ 2) * TP)) ^ -1
 where TP, FP and FN are true positives, false positives and false negatives
 respectively. Currently only supports global score calculation, per class
 averaging is not available.
+
+`mode`s:
+ - :binary : Assumes binary classification
+ - :micro  : Intermediate metrics are calculated globally across all classes
+ - :macro  : Fᵦ is calculated for each class and then averaged
 """
-function f_beta(y::AbstractVector, ŷ::AbstractVector, classes::AbstractVector=unique([y; ŷ]); β=1)
+function f_beta(y::AbstractVector, ŷ::AbstractVector, classes::AbstractVector=unique([y; ŷ]); β, mode=:binary)
     β >= 0 || throw(DomainError(β, "β must be non-negative for Fᵦ score"))
     conf_mat = confusion_matrix(y, ŷ, classes)
-    f_beta(conf_mat; β=β)
+    f_beta(conf_mat; β, mode)
 end
 
-function f_beta(conf_mat::Matrix{<:Integer}; β=1)
+function f_beta(conf_mat::Matrix{<:Integer}; β, mode=:binary)
     β >= 0 || throw(DomainError(β, "β must be non-negative for Fᵦ score"))
+    _f_beta(Val(mode), conf_mat; β)
+end
+
+function _f_beta(::Val{:binary}, conf_mat::Matrix{<:Integer}; β)
+    size(conf_mat) == (2, 2) || throw(ArgumentError("confusion matrix must be 2 × 2 for the binary case"))
+    println("Here")
     tp = tr(conf_mat)
-    fp = sum(permutedims(sum(conf_mat; dims=1)) - diag(conf_mat))
-    fn = sum(sum(conf_mat; dims=2) - diag(conf_mat))
-    inv(1 + (β ^ 2 * fn + fp) / ((1 + β ^ 2) * tp))
+    fp = conf_mat[2, 1]
+    fn = conf_mat[1, 2]
+    (1 + β^2) * tp / ((1 + β^2) * tp + β^2 * fn + fp)
+end
+
+function _f_beta(::Val{:micro}, conf_mat::Matrix{<:Integer}; β)
+    tp = tr(conf_mat)
+    fp = fn = sum(conf_mat) - tp
+    (1 + β^2) * tp / ((1 + β^2) * tp + β^2 * fn + fp)
+end
+
+function _f_beta(::Val{:macro}, conf_mat::Matrix{<:Integer}; β)
+    mean(f_beta_per_class(conf_mat; β))
 end
 
 """
-    f1_score(y, ŷ, classes=unique([y; ŷ]))
-    f1_score(conf_mat; β=1)
+    f_beta_per_class(y, ŷ, classes=unique([y; ŷ]); β)
+    f_beta_per_class(conf_mat; β)
+
+Calculates Fᵦ score per class.
+"""
+function f_beta_per_class(y::AbstractVector, ŷ::AbstractVector, classes::AbstractVector=unique([y; ŷ]); β)
+    β >= 0 || throw(DomainError(β, "β must be non-negative for Fᵦ score"))
+    conf_mat = confusion_matrix(y, ŷ, classes)
+    f_beta_per_class(conf_mat; β)
+end
+
+function f_beta_per_class(conf_mat::Matrix{<:Integer}; β)
+    β >= 0 || throw(DomainError(β, "β must be non-negative for Fᵦ score"))
+    tp = diag(conf_mat)
+    fp = permutedims(sum(conf_mat; dims=1)) .- tp
+    fn = sum(conf_mat; dims=2) .- tp
+    @. (1 + β^2) * tp / ((1 + β^2) * tp + β^2 * fn + fp)
+end
+
+"""
+    f1_score(y, ŷ, classes=unique([y; ŷ]); mode=:binary)
+    f1_score(conf_mat; mode=:binary)
 
 Calculates Fᵦ score with β=1.
 """
-f1_score(y::AbstractVector, ŷ::AbstractVector, classes::AbstractVector=unique([y; ŷ])) = f_beta(y, ŷ, classes)
-f1_score(conf_mat::Matrix{<:Integer}) = f_beta(conf_mat)
+f1_score(y::AbstractVector, ŷ::AbstractVector, classes::AbstractVector=unique([y; ŷ]); mode=:binary) = f_beta(y, ŷ, classes; β=1, mode)
+f1_score(conf_mat::Matrix{<:Integer}; mode=:binary) = f_beta(conf_mat; β=1, mode)
+
+"""
+    f1_per_class(y, ŷ, classes=unique([y; ŷ]); β)
+    f1_per_class(conf_mat; β)
+
+Calculates F₁ score per class.
+"""
+f1_per_class(y::AbstractVector, ŷ::AbstractVector, classes::AbstractVector=unique([y; ŷ])) = f_beta_per_class(y, ŷ, classes; β=1)
+f1_per_class(conf_mat::Matrix{<:Integer}) = f_beta_per_class(conf_mat; β=1)
