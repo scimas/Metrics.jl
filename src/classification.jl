@@ -34,6 +34,27 @@ end
 function accuracy(conf_mat::Matrix{<:Integer})
     tr(conf_mat) / sum(conf_mat)
 end
+
+"""
+    accuracy_per_class(y, ŷ, classes=unique([y; ŷ]))
+    accuracy_per_class(conf_mat)
+
+Calculates accuracy score for targets y and predictions ŷ or the confusion
+matrix conf_mat for each class. `classes` are the unique target values. It is
+mathematically equiavalent to
+
+accuracyᵢ = TPᵢ / Nᵢ
+
+where TPᵢ and Nᵢ are true positives and total number of observations for class
+i, respectively.
+"""
+function accuracy_per_class(y::AbstractVector, ŷ::AbstractVector, classes::AbstractVector=unique([y; ŷ]))
+    conf_mat = confusion_matrix(y, ŷ, classes)
+    accuracy_per_class(conf_mat)
+end
+
+function accuracy_per_class(conf_mat::Matrix{<:Integer})
+    diag(conf_mat) ./ sum(conf_mat; dims=2)
 end
 
 @doc raw"""
