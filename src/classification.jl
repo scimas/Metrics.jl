@@ -76,7 +76,7 @@ function cohen_kappa(y::AbstractVector, ŷ::AbstractVector, classes::AbstractVe
 end
 
 function cohen_kappa(conf_mat::Matrix{<:Integer})
-    pₑ = only(sum(conf_mat; dims=1) * sum(conf_mat; dims=2) / sum(sum(conf_mat; dims=1))^2)
+    pₑ = only(sum(conf_mat; dims=1) * sum(conf_mat; dims=2)) / sum(conf_mat)^2
     (accuracy(conf_mat) - pₑ) / (1 - pₑ)
 end
 
