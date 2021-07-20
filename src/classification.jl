@@ -1,15 +1,15 @@
 """
     confusion_matrix(y, ŷ, classes=unique([y; ŷ]))
 
-Creates the confusion matrix for targets y and predictions ŷ. classes
-are the unique target values. It is recommended to specify this explicitly to
-avoid ambiguities about the order of the target labels in the confusion matrix.
+Creates the confusion matrix for targets y and predictions ŷ. `classes` are the
+unique target values. It is recommended to specify this explicitly to avoid
+ambiguities about the order of the target labels in the confusion matrix.
 """
 function confusion_matrix(y::AbstractVector, ŷ::AbstractVector, classes::AbstractVector=unique([y; ŷ]))
-    length(y) == length(ŷ) || throw(DimensionMismatch("targets and predictions should have same number of elements"))
-    mat = zeros(Int, length(classes), length(classes))
+    length(y) == length(ŷ) || throw(DimensionMismatch("targets and predictions must have same number of elements"))
+    mat = Matrix{Int64}(undef, length(classes), length(classes))
     @inbounds for (i, j) in Iterators.product(1:length(classes), 1:length(classes))
-        mat[i, j] = sum(ŷ[y .== classes[i]] .== classes[j])
+        mat[i, j] = count(ŷ[y .== classes[i]] .== classes[j])
     end
     mat
 end
