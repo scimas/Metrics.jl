@@ -19,7 +19,7 @@ end
     accuracy(conf_mat)
 
 Calculates accuracy score for targets y and predictions ŷ or the confusion
-matrix conf_mat. classes are the unique target values. It is mathematically
+matrix `conf_mat`. `classes` are the unique target values. It is mathematically
 equiavalent to
 
 accuracy = TP / N
@@ -32,7 +32,8 @@ function accuracy(y::AbstractVector, ŷ::AbstractVector, classes::AbstractVecto
 end
 
 function accuracy(conf_mat::Matrix{<:Integer})
-    tr(conf_mat) / sum(sum(conf_mat; dims=1))
+    tr(conf_mat) / sum(conf_mat)
+end
 end
 
 @doc raw"""
